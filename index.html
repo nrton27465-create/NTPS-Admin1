@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>บันทึกการเดินรถ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --navy: #0d1b3e;
+    --navy2: #1a2f5a;
+    --gold: #e6a817;
+    --gold2: #f5c842;
+    --red: #c0392b;
+    --bg: #f0f3f8;
+    --card: #ffffff;
+    --text: #1a2030;
+    --muted: #6b7a99;
+    --border: #d1d9e8;
+    --green: #1a7a4a;
+    --shadow: 0 4px 24px rgba(13,27,62,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(13,27,62,0.25);
+  }
+  .header-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-logo {
+    width: 44px; height: 44px;
+    background: var(--gold);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(230,168,23,0.4);
+  }
+  .header-title { flex: 1; }
+  .header-title h1 {
+    font-family: 'Prompt', sans-serif;
+    font-size: 15px; font-weight: 700;
+    color: #fff; letter-spacing: 0.3px;
+  }
+  .header-title p { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+
+  /* MAIN */
+  .main { max-width: 720px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  /* SECTION CARD */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .card-header {
+    background: linear-gradient(90deg, var(--navy) 0%, var(--navy2) 100%);
+    padding: 12px 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-header .icon {
+    width: 30px; height: 30px;
+    background: rgba(230,168,23,0.2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .card-header h2 {
+    font-family: 'Prompt', sans-serif;
+    font-size: 14px; font-weight: 600;
+    color: #fff;
+  }
+  .card-body { padding: 18px; }
+
+  /* FORM ELEMENTS */
+  .form-row { margin-bottom: 14px; }
+  .form-row label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--muted); margin-bottom: 5px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .form-row label .req { color: var(--red); margin-left: 2px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: 9px; padding: 10px 13px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px; color: var(--text);
+    background: #fafbfd;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: var(--navy2);
+    box-shadow: 0 0 0 3px rgba(26,47,90,0.1);
+    background: #fff;
+  }
+  .form-row textarea { resize: vertical; min-height: 70px; }
+  .form-row select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7a99' d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+
+  /* DISPLAY FIELDS */
+  .display-field {
+    background: #f5f7fc;
+    border: 1.5px solid var(--border);
+    border-radius: 9px; padding: 10px 13px;
+    font-size: 14px; min-height: 40px;
+    color: var(--text);
+  }
+  .display-field.empty { color: var(--muted); font-style: italic; }
+
+  /* QR BUTTON */
+  .btn-qr {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+    color: #fff; border: none; border-radius: 12px;
+    font-family: 'Prompt', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(13,27,62,0.25);
+  }
+  .btn-qr:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(13,27,62,0.35); }
+  .btn-qr:active { transform: translateY(0); }
+
+  /* QR MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,16,40,0.7);
+    z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.25s;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.active { opacity: 1; visibility: visible; }
+  .modal-box {
+    background: #fff; border-radius: 20px;
+    padding: 28px 24px;
+    width: calc(100vw - 40px); max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    transform: scale(0.9);
+    transition: transform 0.25s;
+    text-align: center;
+  }
+  .modal-overlay.active .modal-box { transform: scale(1); }
+  .modal-box h3 { font-family: 'Prompt', sans-serif; font-size: 16px; color: var(--navy); margin-bottom: 6px; }
+  .modal-box p { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+  #qrcode-container { display: flex; justify-content: center; margin-bottom: 18px; }
+  .modal-input-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .modal-input-row input {
+    flex: 1; border: 1.5px solid var(--border); border-radius: 9px;
+    padding: 10px 13px; font-family: 'Sarabun', sans-serif;
+    font-size: 14px; outline: none;
+  }
+  .modal-input-row input:focus { border-color: var(--navy2); }
+  .btn-search {
+    background: var(--gold); color: var(--navy);
+    border: none; border-radius: 9px;
+    padding: 10px 16px; font-family: 'Prompt', sans-serif;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-search:hover { background: var(--gold2); }
+  .btn-close-modal {
+    background: #f0f3f8; color: var(--muted);
+    border: none; border-radius: 9px;
+    padding: 10px 22px; font-family: 'Sarabun', sans-serif;
+    font-size: 13px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-close-modal:hover { background: var(--border); }
+
+  /* STATUS BADGE */
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .status-waiting { background: #fff3cd; color: #856404; }
+  .status-done { background: #d4edda; color: #155724; }
+
+  /* DIVIDER */
+  .section-divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 8px 0 14px;
+  }
+  .section-divider span { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
+  .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* SAVE BUTTON */
+  .btn-save {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, #1a7a4a 0%, #22a05e 100%);
+    color: #fff; border: none; border-radius: 14px;
+    font-family: 'Prompt', sans-serif;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 18px rgba(26,122,74,0.35);
+    margin-top: 8px;
+  }
+  .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,122,74,0.45); }
+  .btn-save:active { transform: translateY(0); }
+  .btn-save:disabled { background: #adb5bd; box-shadow: none; cursor: not-allowed; transform: none; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--navy); color: #fff;
+    padding: 12px 24px; border-radius: 40px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    z-index: 9999;
+    transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.35s;
+    opacity: 0;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.success { background: var(--green); }
+  .toast.error { background: var(--red); }
+
+  /* LOADING SPINNER */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* OPTIONAL TOGGLE */
+  .toggle-section { margin-bottom: 14px; }
+  .toggle-label {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
+  }
+  .toggle-label input[type="checkbox"] { display: none; }
+  .toggle-switch {
+    width: 42px; height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 18px; height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle-label input:checked + .toggle-switch { background: var(--gold); }
+  .toggle-label input:checked + .toggle-switch::after { transform: translateX(18px); }
+  .toggle-label .toggle-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .collapse-content { display: none; margin-top: 14px; }
+  .collapse-content.open { display: block; }
+
+  /* INFO MESSAGE */
+  .info-msg {
+    background: #e8f4fd;
+    border: 1px solid #bee3f8;
+    border-radius: 9px;
+    padding: 10px 14px;
+    font-size: 12px; color: #2b6cb0;
+    margin-bottom: 14px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-logo">🚛</div>
+    <div class="header-title">
+      <h1>บันทึกการเดินรถ</h1>
+      <p>บริษัท นครสวรรค์ตั้งประเสริฐ จำกัด</p>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- RECORDER -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon">👤</div>
+      <h2>ข้อมูลผู้บันทึก</h2>
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <label>ผู้บันทึก <span class="req">*</span></label>
+        <select id="recorder">
+          <option value="">-- กรุณาเลือกผู้บันทึก --</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR SCAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon">📋</div>
+      <h2>ข้อมูลงานและพนักงาน</h2>
+    </div>
+    <div class="card-body">
+      <button class="btn-qr" onclick="openQRModal()">
+        <span style="font-size:20px;">📷</span>
+        <span>สแกน QR Code / ค้นหารหัสงาน</span>
+      </button>
+
+      <div id="job-info" style="margin-top:16px; display:none;">
+        <div class="section-divider"><span>ข้อมูลพนักงาน</span></div>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-row">
+            <label>รหัสพนักงาน</label>
+            <div class="display-field" id="d-empId">-</div>
+          </div>
+          <div class="form-row">
+            <label>ชื่อพนักงาน</label>
+            <div class="display-field" id="d-empName">-</div>
+          </div>
+        </div>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-row">
+            <label>รหัสงาน</label>
+            <div class="display-field" id="d-jobCode">-</div>
+          </div>
+          <div class="form-row">
+            <label>สถานะ</label>
+            <div class="display-field" id="d-status">-</div>
+          </div>
+        </div>
+        <div class="section-divider"><span>รายละเอียดงาน</span></div>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-row">
+            <label>กำหนดส่ง</label>
+            <div class="display-field" id="d-dueDate">-</div>
+          </div>
+          <div class="form-row">
+            <label>ลูกค้า</label>
+            <div class="display-field" id="d-customer">-</div>
+          </div>
+        </div>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-row">
+            <label>เบอร์โทร</label>
+            <div class="display-field" id="d-phone">-</div>
+          </div>
+          <div class="form-row">
+            <label>สินค้า</label>
+            <div class="display-field" id="d-product">-</div>
+          </div>
+        </div>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-row">
+            <label>ต้นทาง</label>
+            <div class="display-field" id="d-origin">-</div>
+          </div>
+          <div class="form-row">
+            <label>ปลายทาง</label>
+            <div class="display-field" id="d-destination">-</div>
+          </div>
+        </div>
+        <div class="form-grid" style="margin-bottom:4px;">
+          <div class="form-row">
+            <label>จำนวน</label>
+            <div class="display-field" id="d-quantity">-</div>
+          </div>
+          <div class="form-row">
+            <label>หมายเหตุ</label>
+            <div class="display-field" id="d-remark">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RETURN TRIP -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon">🔄</div>
+      <h2>มอบหมายงานเที่ยวล่อง</h2>
+    </div>
+    <div class="card-body">
+      <div class="toggle-section">
+        <label class="toggle-label">
+          <input type="checkbox" id="hasReturn" onchange="toggleReturn(this.checked)" />
+          <div class="toggle-switch"></div>
+          <span class="toggle-text">มีงานเที่ยวล่อง</span>
+        </label>
+      </div>
+      <div id="return-section" class="collapse-content">
+        <div class="info-msg">
+          <span>ℹ️</span>
+          <span>กรอกข้อมูลงานเที่ยวกลับ (ใส่หรือไม่ใส่ก็ได้ตามความเหมาะสม)</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>กำหนดส่ง (วันที่)</label>
+            <input type="date" id="r-dueDate" />
+          </div>
+          <div class="form-row">
+            <label>เวลา</label>
+            <input type="time" id="r-dueTime" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>ลูกค้า <span class="req">*</span></label>
+            <input type="text" id="r-customer" placeholder="ชื่อลูกค้า" />
+          </div>
+          <div class="form-row">
+            <label>เบอร์โทร <span class="req">*</span></label>
+            <input type="tel" id="r-phone" placeholder="0XX-XXXXXXX" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>ที่อยู่</label>
+          <input type="text" id="r-address" placeholder="ที่อยู่ (ไม่บังคับ)" />
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>ต้นทาง <span class="req">*</span></label>
+            <input type="text" id="r-origin" placeholder="จังหวัด / อำเภอ" />
+          </div>
+          <div class="form-row">
+            <label>ปลายทาง <span class="req">*</span></label>
+            <input type="text" id="r-destination" placeholder="จังหวัด / อำเภอ" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>สินค้า</label>
+            <select id="r-product">
+              <option value="">-- เลือกสินค้า --</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>จำนวน</label>
+            <input type="text" id="r-quantity" placeholder="จำนวน / หน่วย" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>หมายเหตุ</label>
+          <textarea id="r-remark" placeholder="หมายเหตุเพิ่มเติม (ไม่บังคับ)"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPENSES -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon">💰</div>
+      <h2>ค่าใช้จ่าย</h2>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-row">
+          <label>เบี้ยเลี้ยง (บาท)</label>
+          <input type="number" id="e-allowance" placeholder="0.00" min="0" step="0.01" />
+        </div>
+        <div class="form-row">
+          <label>น้ำมัน (ลิตร)</label>
+          <input type="number" id="e-fuel" placeholder="0.00" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>เลขไมล์</label>
+        <input type="number" id="e-mileage" placeholder="กม." min="0" />
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE BUTTON -->
+  <button class="btn-save" id="btn-save" onclick="saveRecord()">
+    <div class="spinner" id="save-spinner"></div>
+    <span>💾</span>
+    <span id="save-text">บันทึกข้อมูล</span>
+  </button>
+
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal-box">
+    <h3>📷 ค้นหารหัสงาน</h3>
+    <p>พิมพ์รหัสพนักงาน หรือ รหัสงาน เพื่อดึงข้อมูล</p>
+    <div id="qrcode-container">
+      <div id="qrcode"></div>
+    </div>
+    <div class="modal-input-row">
+      <input type="text" id="qr-input" placeholder="รหัสพนักงาน / รหัสงาน" onkeydown="if(event.key==='Enter') searchJob()" />
+      <button class="btn-search" onclick="searchJob()">ค้นหา</button>
+    </div>
+    <div id="qr-error" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
+    <button class="btn-close-modal" onclick="closeQRModal()">✕ ปิด</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let currentJob = null;
+
+  // ── INIT ─────────────────────────────────────────────────────
+  window.onload = function () {
+    loadRecorders();
+    loadProducts();
+    generateQR("รหัสงาน-นครสวรรค์");
+  };
+
+  function loadRecorders() {
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res.success) {
+          const sel = document.getElementById("recorder");
+          res.data.forEach(name => {
+            const opt = document.createElement("option");
+            opt.value = name; opt.textContent = name;
+            sel.appendChild(opt);
+          });
+        }
+      })
+      .getDDLRecorders();
+  }
+
+  function loadProducts() {
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res.success) {
+          const sel = document.getElementById("r-product");
+          res.data.forEach(name => {
+            const opt = document.createElement("option");
+            opt.value = name; opt.textContent = name;
+            sel.appendChild(opt);
+          });
+        }
+      })
+      .getDDLProducts();
+  }
+
+  // ── QR CODE ───────────────────────────────────────────────────
+  function generateQR(text) {
+    const container = document.getElementById("qrcode");
+    container.innerHTML = "";
+    new QRCode(container, {
+      text: text || "รหัสงาน",
+      width: 160, height: 160,
+      colorDark: "#0d1b3e",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  function openQRModal() {
+    document.getElementById("qr-modal").classList.add("active");
+    document.getElementById("qr-input").focus();
+  }
+
+  function closeQRModal() {
+    document.getElementById("qr-modal").classList.remove("active");
+    document.getElementById("qr-error").style.display = "none";
+  }
+
+  function searchJob() {
+    const code = document.getElementById("qr-input").value.trim();
+    if (!code) { showQRError("กรุณาใส่รหัสพนักงานหรือรหัสงาน"); return; }
+
+    generateQR(code);
+    document.getElementById("qr-error").style.display = "none";
+
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res.success) {
+          currentJob = res.data;
+          fillJobInfo(res.data);
+          closeQRModal();
+          showToast("✅ โหลดข้อมูลงานสำเร็จ", "success");
+        } else {
+          showQRError(res.error || "ไม่พบข้อมูล");
+        }
+      })
+      .withFailureHandler(function (err) {
+        showQRError("เกิดข้อผิดพลาด: " + err.message);
+      })
+      .getJobByQR(code);
+  }
+
+  function showQRError(msg) {
+    const el = document.getElementById("qr-error");
+    el.textContent = "⚠️ " + msg;
+    el.style.display = "block";
+  }
+
+  function fillJobInfo(job) {
+    document.getElementById("job-info").style.display = "block";
+    set("d-empId", job.empId);
+    set("d-empName", job.empName);
+    set("d-jobCode", job.jobCode);
+    set("d-dueDate", job.dueDate);
+    set("d-customer", job.customer);
+    set("d-phone", job.phone);
+    set("d-origin", job.origin);
+    set("d-destination", job.destination);
+    set("d-product", job.product);
+    set("d-quantity", job.quantity);
+    set("d-remark", job.remark || "-");
+
+    const statusEl = document.getElementById("d-status");
+    const status = job.status || "รอรับงาน";
+    statusEl.innerHTML = status === "รับงานแล้ว"
+      ? `<span class="status-badge status-done">✅ รับงานแล้ว</span>`
+      : `<span class="status-badge status-waiting">⏳ รอรับงาน</span>`;
+  }
+
+  function set(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val || "-";
+    el.classList.toggle("empty", !val || val === "-");
+  }
+
+  // ── TOGGLE RETURN ─────────────────────────────────────────────
+  function toggleReturn(checked) {
+    const sec = document.getElementById("return-section");
+    if (checked) sec.classList.add("open");
+    else sec.classList.remove("open");
+  }
+
+  // ── SAVE ──────────────────────────────────────────────────────
+  function saveRecord() {
+    const recorder = document.getElementById("recorder").value;
+    if (!recorder) { showToast("⚠️ กรุณาเลือกผู้บันทึก", "error"); return; }
+    if (!currentJob) { showToast("⚠️ กรุณาค้นหาข้อมูลงานก่อน", "error"); return; }
+
+    const hasReturn = document.getElementById("hasReturn").checked;
+    if (hasReturn) {
+      const rc = v("r-customer"), rp = v("r-phone"), ro = v("r-origin"), rd = v("r-destination");
+      if (!rc || !rp || !ro || !rd) {
+        showToast("⚠️ กรุณากรอกข้อมูลเที่ยวล่องให้ครบ", "error"); return;
+      }
+    }
+
+    // Build return due date
+    let returnDueDate = "";
+    if (hasReturn && (v("r-dueDate") || v("r-dueTime"))) {
+      returnDueDate = (v("r-dueDate") || "") + " " + (v("r-dueTime") || "");
+    }
+
+    const payload = {
+      recorder,
+      empId: currentJob.empId,
+      empName: currentJob.empName,
+      jobCode: currentJob.jobCode,
+      mainDueDate: currentJob.dueDate,
+      mainCustomer: currentJob.customer,
+      mainPhone: currentJob.phone,
+      mainOrigin: currentJob.origin,
+      mainDestination: currentJob.destination,
+      mainProduct: currentJob.product,
+      mainQuantity: currentJob.quantity,
+      mainRemark: currentJob.remark,
+      returnDueDate: hasReturn ? returnDueDate.trim() : "",
+      returnCustomer: hasReturn ? v("r-customer") : "",
+      returnPhone: hasReturn ? v("r-phone") : "",
+      returnAddress: hasReturn ? v("r-address") : "",
+      returnOrigin: hasReturn ? v("r-origin") : "",
+      returnDestination: hasReturn ? v("r-destination") : "",
+      returnProduct: hasReturn ? v("r-product") : "",
+      returnQuantity: hasReturn ? v("r-quantity") : "",
+      returnRemark: hasReturn ? v("r-remark") : "",
+      allowance: v("e-allowance"),
+      fuel: v("e-fuel"),
+      mileage: v("e-mileage")
+    };
+
+    setSaveLoading(true);
+    google.script.run
+      .withSuccessHandler(function (res) {
+        setSaveLoading(false);
+        if (res.success) {
+          showToast("✅ บันทึกข้อมูลสำเร็จ", "success");
+          resetForm();
+        } else {
+          showToast("❌ " + (res.error || "บันทึกไม่สำเร็จ"), "error");
+        }
+      })
+      .withFailureHandler(function (err) {
+        setSaveLoading(false);
+        showToast("❌ เกิดข้อผิดพลาด: " + err.message, "error");
+      })
+      .saveRecord(payload);
+  }
+
+  function v(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  function setSaveLoading(loading) {
+    const btn = document.getElementById("btn-save");
+    const spinner = document.getElementById("save-spinner");
+    const text = document.getElementById("save-text");
+    btn.disabled = loading;
+    spinner.style.display = loading ? "block" : "none";
+    text.textContent = loading ? "กำลังบันทึก..." : "บันทึกข้อมูล";
+  }
+
+  function resetForm() {
+    document.getElementById("recorder").value = "";
+    document.getElementById("qr-input").value = "";
+    document.getElementById("job-info").style.display = "none";
+    currentJob = null;
+
+    // Reset return
+    document.getElementById("hasReturn").checked = false;
+    document.getElementById("return-section").classList.remove("open");
+    ["r-dueDate","r-dueTime","r-customer","r-phone","r-address","r-origin","r-destination","r-quantity","r-remark"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    document.getElementById("r-product").value = "";
+
+    // Reset expenses
+    ["e-allowance","e-fuel","e-mileage"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+
+    generateQR("รหัสงาน-นครสวรรค์");
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.className = "toast show " + (type || "");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = "toast"; }, 3200);
+  }
+</script>
+</body>
+</html>
