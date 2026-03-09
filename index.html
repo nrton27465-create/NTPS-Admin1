@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>บันทึกการเดินรถ – นครสวรรค์ตั้งประเสริฐ</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;600;700&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
 /* ── ROOT ───────────────────────────────────────────── */
 :root {
@@ -87,21 +87,34 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .badge-done{background:#d4edda;color:#155724}
 
 /* ── MODAL ──────────────────────────────────────────── */
-.overlay{position:fixed;inset:0;background:rgba(10,16,40,.72);z-index:999;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .25s;backdrop-filter:blur(4px)}
+.overlay{position:fixed;inset:0;background:rgba(10,16,40,.85);z-index:999;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .25s;backdrop-filter:blur(6px)}
 .overlay.on{opacity:1;visibility:visible}
-.modal{background:#fff;border-radius:20px;padding:28px 24px;width:calc(100vw - 40px);max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.35);transform:scale(.9);transition:transform .25s;text-align:center}
+.modal{background:#fff;border-radius:20px;padding:22px 20px;width:calc(100vw - 32px);max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4);transform:scale(.9);transition:transform .25s;text-align:center}
 .overlay.on .modal{transform:scale(1)}
-.modal h3{font-family:'Prompt',sans-serif;font-size:16px;color:var(--navy);margin-bottom:6px}
-.modal p{font-size:12px;color:var(--muted);margin-bottom:18px}
-#qrbox{display:flex;justify-content:center;margin-bottom:18px}
+.modal h3{font-family:'Prompt',sans-serif;font-size:16px;color:var(--navy);margin-bottom:4px}
+.modal p{font-size:12px;color:var(--muted);margin-bottom:14px}
+/* Camera viewer */
+.cam-wrap{position:relative;width:100%;aspect-ratio:1/1;background:#000;border-radius:14px;overflow:hidden;margin-bottom:14px}
+#cam-video{width:100%;height:100%;object-fit:cover;display:block}
+#cam-canvas{display:none}
+.cam-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.cam-frame::before{content:'';display:block;width:65%;aspect-ratio:1/1;border:3px solid var(--gold);border-radius:12px;box-shadow:0 0 0 2000px rgba(0,0,0,.45)}
+.scan-line{position:absolute;left:17.5%;width:65%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scanAnim 2s linear infinite}
+@keyframes scanAnim{0%{top:17.5%}100%{top:82.5%}}
+.cam-status{font-size:12px;color:var(--muted);margin-bottom:12px;min-height:18px}
+.cam-status.found{color:var(--green);font-weight:700}
+.cam-status.err{color:var(--red)}
+/* manual input row */
 .mi-row{display:flex;gap:8px;margin-bottom:10px}
 .mi-row input{flex:1;border:1.5px solid var(--bdr);border-radius:9px;padding:10px 13px;font-family:'Sarabun',sans-serif;font-size:14px;outline:none}
 .mi-row input:focus{border-color:var(--navy2)}
 .btn-srch{background:var(--gold);color:var(--navy);border:none;border-radius:9px;padding:10px 16px;font-family:'Prompt',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .btn-srch:hover{background:var(--gold2)}
-.btn-cls{background:#f0f3f8;color:var(--muted);border:none;border-radius:9px;padding:10px 22px;font-size:13px;cursor:pointer}
+.btn-cls{background:#f0f3f8;color:var(--muted);border:none;border-radius:9px;padding:10px 22px;font-size:13px;cursor:pointer;margin-top:4px}
 .btn-cls:hover{background:var(--bdr)}
 #qr-err{color:var(--red);font-size:12px;margin-bottom:8px;display:none}
+.divider-or{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:11px;color:var(--muted)}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--bdr)}
 
 /* ── TOAST ──────────────────────────────────────────── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:#fff;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.3);z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .35s;opacity:0;white-space:nowrap}
@@ -256,12 +269,23 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <!-- QR MODAL -->
 <div class="overlay" id="modal">
   <div class="modal">
-    <h3>📷 ค้นหารหัสงาน</h3>
-    <p>พิมพ์รหัสพนักงาน หรือ รหัสงาน แล้วกดค้นหา</p>
-    <div id="qrbox"></div>
+    <h3>📷 สแกน QR Code</h3>
+    <p>ส่อง QR Code รหัสงานให้อยู่ในกรอบ</p>
+
+    <!-- Camera -->
+    <div class="cam-wrap">
+      <video id="cam-video" autoplay playsinline muted></video>
+      <canvas id="cam-canvas"></canvas>
+      <div class="cam-frame"></div>
+      <div class="scan-line"></div>
+    </div>
+    <div class="cam-status" id="cam-status">กำลังเปิดกล้อง...</div>
+
+    <!-- Manual fallback -->
+    <div class="divider-or"><span>หรือพิมพ์รหัสเอง</span></div>
     <div class="mi-row">
-      <input type="text" id="qr-inp" placeholder="รหัสพนักงาน / รหัสงาน" onkeydown="if(event.key==='Enter')searchJob()"/>
-      <button class="btn-srch" onclick="searchJob()">ค้นหา</button>
+      <input type="text" id="qr-inp" placeholder="รหัสพนักงาน / รหัสงาน" onkeydown="if(event.key==='Enter')manualSearch()"/>
+      <button class="btn-srch" onclick="manualSearch()">ค้นหา</button>
     </div>
     <div id="qr-err"></div>
     <button class="btn-cls" onclick="closeModal()">✕ ปิด</button>
@@ -275,7 +299,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 // ── CONFIG ───────────────────────────────────────────────────
 // ★ วาง Web App URL ที่ได้จาก Apps Script Deploy ที่นี่
 //   หรือกรอกในช่อง "ตั้งค่า Web App URL" ที่หน้าเว็บ
-const DEFAULT_API = "https://script.google.com/macros/s/AKfycbzYsOq8wNOhK2gZywBvRZ1K0lQ1E_QRhXdHGotCIo98APT5Kva3oWrmLo3rGhaF8eby/exec";   // ← ใส่ URL ที่นี่ได้เลย
+const DEFAULT_API = "";   // ← ใส่ URL ที่นี่ได้เลย
 
 // ── INIT ─────────────────────────────────────────────────────
 let currentJob = null;
@@ -283,7 +307,6 @@ let currentJob = null;
 window.onload = () => {
   const saved = localStorage.getItem("gasUrl") || DEFAULT_API;
   if (saved) document.getElementById("api-url").value = saved;
-  generateQR("NTS-JOB");
   loadDDL();
 };
 
@@ -316,23 +339,96 @@ async function loadDDL() {
   } catch(e) { console.warn("loadDDL:", e); }
 }
 
-// ── QR ────────────────────────────────────────────────────────
-function generateQR(text) {
-  const box = document.getElementById("qrbox");
-  box.innerHTML = "";
-  new QRCode(box, { text: text||"NTS", width:150, height:150, colorDark:"#0d1b3e", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.H });
-}
-function openModal() { document.getElementById("modal").classList.add("on"); document.getElementById("qr-inp").focus(); }
-function closeModal() { document.getElementById("modal").classList.remove("on"); document.getElementById("qr-err").style.display="none"; }
+// ── QR CAMERA SCANNER ────────────────────────────────────────
+let camStream = null;
+let scanLoop  = null;
+let scanLocked = false;   // prevent duplicate triggers
 
-async function searchJob() {
+function generateQR(){}   // no longer needed
+
+function openModal() {
+  document.getElementById("modal").classList.add("on");
+  clearQRErr();
+  scanLocked = false;
+  startCamera();
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.remove("on");
+  stopCamera();
+  clearQRErr();
+}
+
+async function startCamera() {
+  const status = document.getElementById("cam-status");
+  status.textContent = "กำลังเปิดกล้อง...";
+  status.className   = "cam-status";
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    const video = document.getElementById("cam-video");
+    video.srcObject = camStream;
+    await video.play();
+    status.textContent = "พร้อมสแกน – ส่อง QR Code ให้อยู่ในกรอบ";
+    requestAnimationFrame(scanFrame);
+  } catch(e) {
+    status.textContent = "⚠️ เปิดกล้องไม่ได้ – กรุณาพิมพ์รหัสด้านล่าง";
+    status.className   = "cam-status err";
+    console.warn("Camera error:", e);
+  }
+}
+
+function stopCamera() {
+  if (scanLoop) { cancelAnimationFrame(scanLoop); scanLoop = null; }
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+}
+
+function scanFrame() {
+  if (!camStream || scanLocked) return;
+
+  const video  = document.getElementById("cam-video");
+  const canvas = document.getElementById("cam-canvas");
+
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+    scanLoop = requestAnimationFrame(scanFrame); return;
+  }
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+  if (code && code.data) {
+    scanLocked = true;
+    const status = document.getElementById("cam-status");
+    status.textContent = "✅ พบรหัส: " + code.data;
+    status.className   = "cam-status found";
+    // short pause so user sees the found message
+    setTimeout(() => fetchJob(code.data), 400);
+    return;
+  }
+
+  scanLoop = requestAnimationFrame(scanFrame);
+}
+
+async function manualSearch() {
   const code = document.getElementById("qr-inp").value.trim();
   if (!code) { setQRErr("กรุณาใส่รหัส"); return; }
-  const url = getApiUrl();
-  if (!url) { setQRErr("กรุณาตั้งค่า Web App URL ก่อน"); return; }
-
-  generateQR(code);
   clearQRErr();
+  await fetchJob(code);
+}
+
+async function fetchJob(code) {
+  const url = getApiUrl();
+  if (!url) { setQRErr("กรุณาตั้งค่า Web App URL ก่อน"); scanLocked=false; return; }
+
+  const status = document.getElementById("cam-status");
+  status.textContent = "กำลังดึงข้อมูล...";
+  status.className   = "cam-status";
 
   try {
     const res  = await fetch(`${url}?action=getJob&code=${encodeURIComponent(code)}`);
@@ -341,11 +437,19 @@ async function searchJob() {
       currentJob = json.data;
       fillJob(json.data);
       closeModal();
-      toast("✅ โหลดข้อมูลงานสำเร็จ","ok");
+      toast("✅ โหลดข้อมูลงานสำเร็จ", "ok");
     } else {
       setQRErr(json.error || "ไม่พบข้อมูล");
+      status.textContent = "พร้อมสแกน – ส่อง QR Code ให้อยู่ในกรอบ";
+      status.className   = "cam-status";
+      scanLocked = false;
+      scanLoop   = requestAnimationFrame(scanFrame);
     }
-  } catch(e) { setQRErr("เชื่อมต่อไม่ได้: " + e.message); }
+  } catch(e) {
+    setQRErr("เชื่อมต่อไม่ได้: " + e.message);
+    scanLocked = false;
+    scanLoop   = requestAnimationFrame(scanFrame);
+  }
 }
 
 function setQRErr(m){ const e=document.getElementById("qr-err"); e.textContent="⚠️ "+m; e.style.display="block"; }
@@ -463,7 +567,6 @@ function resetForm() {
   document.getElementById("job-info").style.display="none";
   document.getElementById("qr-inp").value="";
   currentJob=null;
-  generateQR("NTS-JOB");
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
